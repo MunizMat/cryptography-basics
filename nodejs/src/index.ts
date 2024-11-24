@@ -1,6 +1,15 @@
 import { hash } from './hash';
 import {hmac} from "./hmac";
-import {BinaryLike, randomBytes} from "node:crypto";
+import {
+    randomBytes,
+    generateKeyPairSync,
+    publicEncrypt,
+    privateDecrypt,
+    sign,
+    verify,
+    createSign,
+    createVerify
+} from "node:crypto";
 import {keys} from "./keys";
 import {encryptMessage} from "./encryptMessage";
 import { generateKeySync } from 'node:crypto'
@@ -50,5 +59,49 @@ try {
     const decryptedMessage2 = decryptMessage({ encryptedMessage, initializationVector, secretKey: secretKey2 });
     console.log('Decrypted Message with Different key: ', decryptedMessage2);
 } catch (error) {
-    // console.error(error)
+    console.log('Error decrypting message\n');
 }
+
+/**
+ * Asymetric Encryption Examples:
+ */
+console.log('--------------- Asymetric Encryption Examples ----------------');
+const messageToEncrypt = 'Message encrypted with public key';
+console.log('Message: ', messageToEncrypt);
+
+const { publicKey, privateKey } = generateKeyPairSync('rsa', {  modulusLength: 2048 });
+
+const asymetricEncryptedMessage = publicEncrypt(publicKey, messageToEncrypt);
+console.log('Encrypted Message: ', asymetricEncryptedMessage.toString('hex'));
+
+const asymetricDecryptedMessage = privateDecrypt(privateKey, asymetricEncryptedMessage);
+console.log('Decrypted Message: ', asymetricDecryptedMessage.toString('utf-8'), "\n");
+
+/**
+ * Digital Signature Examples:
+ */
+console.log('--------------- Digital Signature Examples ----------------');
+const keyPair = generateKeyPairSync('rsa', { modulusLength: 2048 });
+
+const messageToSign = 'Signed message';
+
+console.log('Message: ', messageToSign);
+
+const signer = createSign('SHA256');
+
+const signature = signer.update(messageToSign, 'utf-8').sign(keyPair.privateKey, 'hex');
+
+console.log('Signature: ', signature);
+
+const verifier = createVerify('SHA256');
+const isValid = verifier.update(messageToSign, 'utf-8').verify(keyPair.publicKey, signature, 'hex');
+
+const verifier2 = createVerify('SHA256');
+const isValid2 = verifier2.update('Dummy Text', 'utf-8').verify(keyPair.publicKey, signature, 'hex');
+
+console.log('Is valid: ', isValid);
+console.log('Is valid 2: ', isValid2);
+
+
+
+
